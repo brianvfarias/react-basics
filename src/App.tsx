@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
+import { key } from './APIkey.ts'
 import './App.css'
 import { Weather } from './components/Weather'
-
+import { SearchHistory, SearchHistoryProps } from './components/SearchHistory'
 interface SendData {
   trigger: boolean | null
-  city: string | null
+  city: string
 }
 
 interface WeatherInfo {
-  city: string | null
+  city: string
   temp_c: number
 }
 
@@ -18,14 +19,29 @@ export function App() {
   const [cityInput, setCityInput] = useState("")
   const [sendData, setSendData] = useState<SendData>({} as SendData);
   const [weatherInfo, setWeatherInfo] = useState<WeatherInfo>({} as WeatherInfo)
+  const [history, setHistory] = useState<SearchHistoryProps[]>([])
+  const firstLoad = useRef(true);
   useEffect(() => {
-    const key = '860dec39e5c5491d86b231838232012'
-    fetch(`http://api.weatherapi.com/v1/current.json?key=${key}&q=${sendData.city}`)
-      .then(response => response.json())
-      .then(data => {
-        console.log("use effet")
-        setWeatherInfo({ city: sendData.city, temp_c: data?.current?.temp_c })
-      })
+    firstLoad.current = true;
+  }, [])
+  useEffect(() => {
+    if (!firstLoad.current) {
+      fetch(`http://api.weatherapi.com/v1/current.json?key=${key}&q=${sendData.city}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            setCityInput('')
+            return alert("City name not supported!!!")
+          }
+          console.log("use effet")
+          setWeatherInfo({ city: sendData.city, temp_c: data?.current?.temp_c })
+          setHistory(state => { return [...state, { city: sendData.city, temp_c: data?.current?.temp_c, time: new Date() }] })
+          setCityInput('')
+        })
+      return
+    }
+    firstLoad.current = false;
+    return
   }, [sendData])
   return (
     <div>
@@ -41,6 +57,8 @@ export function App() {
       }}>Look up Weather</button>
       <br />
       {weatherInfo.temp_c != undefined ? <Weather city={weatherInfo?.city} temp_c={weatherInfo.temp_c} /> : ""}
+      <br />
+      {history && history.map((h, index) => <SearchHistory city={h.city} temp_c={h.temp_c} time={h.time} key={index} />)}
     </div >
   )
 }
