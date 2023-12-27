@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 import { key } from './APIkey.ts'
@@ -6,7 +6,7 @@ import './App.css'
 import { Weather } from './components/Weather'
 import { SearchHistory, SearchHistoryProps } from './components/SearchHistory'
 interface SendData {
-  trigger: boolean | null
+  trigger: boolean
   city: string
 }
 
@@ -20,13 +20,19 @@ export function App() {
   const [sendData, setSendData] = useState<SendData>({} as SendData);
   const [weatherInfo, setWeatherInfo] = useState<WeatherInfo>({} as WeatherInfo)
   const [history, setHistory] = useState<SearchHistoryProps[]>([])
-  const firstLoad = useRef(true);
   useEffect(() => {
-    firstLoad.current = true;
+    const storedHistory = localStorage.getItem('storedHistory')
+
+    if (storedHistory) {
+      const updateHistory = JSON.parse(storedHistory)
+      console.log(updateHistory)
+      setHistory(updateHistory)
+    }
   }, [])
   useEffect(() => {
-    if (!firstLoad.current) {
-      fetch(`http://api.weatherapi.com/v1/current.json?key=${key}&q=${sendData.city}`)
+    if (sendData.trigger) {
+      const searchCity = sendData.city === '' ? 'London' : sendData.city
+      fetch(`http://api.weatherapi.com/v1/current.json?key=${key}&q=${searchCity}`)
         .then(response => response.json())
         .then(data => {
           if (data.error) {
@@ -34,15 +40,27 @@ export function App() {
             return alert("City name not supported!!!")
           }
           console.log("use effet")
-          setWeatherInfo({ city: sendData.city, temp_c: data?.current?.temp_c })
-          setHistory(state => { return [...state, { city: sendData.city, temp_c: data?.current?.temp_c, time: new Date() }] })
+          setWeatherInfo({ city: searchCity, temp_c: data?.current?.temp_c })
+          setHistory(state => {
+            localStorage.setItem('storedHistory', JSON.stringify([...state, {
+              city: searchCity, temp_c: data?.current?.temp_c, time: new Date().toLocaleDateString("pt-BR", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "numeric",
+                minute: "numeric"
+              })
+            }]))
+            return [...state, { city: searchCity, temp_c: data?.current?.temp_c, time: new Date() }]
+          })
+
           setCityInput('')
+          setSendData({ trigger: false, city: '' })
         })
       return
     }
-    firstLoad.current = false;
     return
-  }, [sendData])
+  }, [sendData, history])
   return (
     <div>
       <label htmlFor="city">Insert the city you are in right now</label><br />
