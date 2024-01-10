@@ -51,7 +51,15 @@ export function App() {
                 minute: "numeric"
               })
             }]))
-            return [...state, { city: searchCity, temp_c: data?.current?.temp_c, time: new Date() }]
+            return [...state, {
+              city: searchCity, temp_c: data?.current?.temp_c, time: new Date().toLocaleDateString("pt-BR", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "numeric",
+                minute: "numeric"
+              })
+            }]
           })
 
           setCityInput('')
