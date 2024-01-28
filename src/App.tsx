@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
-import { key } from './APIkey.ts'
 import './App.css'
 import { Weather } from './components/Weather'
 import { SearchHistory, SearchHistoryProps } from './components/SearchHistory'
@@ -32,7 +31,9 @@ export function App() {
   useEffect(() => {
     if (sendData.trigger) {
       const searchCity = sendData.city === '' ? 'London' : sendData.city
-      fetch(`http://api.weatherapi.com/v1/current.json?key=${key}&q=${searchCity}`)
+      const url = `http://api.weatherapi.com/v1/current.json?key=${import.meta.env.VITE_KEY}&q=${searchCity}`
+      console.log(url)
+      fetch(url)
         .then(response => response.json())
         .then(data => {
           if (data.error) {
